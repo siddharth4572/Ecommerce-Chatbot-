@@ -219,7 +219,7 @@ export default function ChatbotPage() {
     } catch (err) {
       // Handle errors from the /chat API call or other issues
       setIsTyping(false);
-      const errorMessageText = err.message || "Sorry, something went wrong. Please try again.";
+      const errorMessageText = (err as Error).message || "Sorry, something went wrong. Please try again.";
       setError(errorMessageText); // Display error to user
 
       // Add an error message from the bot to the chat UI
