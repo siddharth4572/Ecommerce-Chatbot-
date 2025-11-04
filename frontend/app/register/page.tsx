@@ -7,6 +7,9 @@ import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { Eye, EyeOff, UserPlus, AlertCircle, CheckCircle } from "lucide-react"
 
+// Use an environment variable for the API URL, with a fallback for local dev
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+
 // Registration page component
 export default function RegisterPage() {
   // State for form data (username, password, confirmPassword)
@@ -55,7 +58,7 @@ export default function RegisterPage() {
 
     try {
       // API call to the backend /register endpoint
-      const response = await fetch("http://localhost:5000/register", {
+      const response = await fetch(`${API_URL}/register`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -80,7 +83,7 @@ export default function RegisterPage() {
       }
     } catch (err) {
       // Handle network errors or if the backend server is unreachable
-      setError("Network error. Please ensure the backend server is running and accessible.");
+      setError((err as Error).message || "Network error. Please ensure the backend server is running and accessible.");
     } finally {
       setIsLoading(false); // Reset loading state regardless of outcome
     }

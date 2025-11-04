@@ -7,6 +7,9 @@ import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { Eye, EyeOff, LogIn, AlertCircle } from "lucide-react"
 
+// Use an environment variable for the API URL, with a fallback for local dev
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+
 // Login page component
 export default function LoginPage() {
   // State for form data (username, password)
@@ -41,7 +44,7 @@ export default function LoginPage() {
 
     try {
       // API call to the backend /login endpoint
-      const response = await fetch("http://localhost:5000/login", {
+      const response = await fetch(`${API_URL}/login`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -166,7 +169,7 @@ export default function LoginPage() {
 
             <div className="text-center pt-2">
               <p className="text-sm text-gray-500">
-                Don't have an account?{" "}
+                Don&apos;t have an account?{" "}
                 <Link href="/register" className="font-semibold text-indigo-600 hover:text-indigo-500 hover:underline transition-colors duration-150 ease-in-out">
                   Sign up
                 </Link>
