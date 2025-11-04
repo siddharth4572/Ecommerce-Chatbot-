@@ -456,6 +456,8 @@ with app.app_context():
     create_tables()      # Create tables if they don't exist
     populate_products()  # Add mock products if the table is empty
 
+# --- Application Entry Point for Local Development ---
+if __name__ == '__main__':
     # Run the Flask development server
     # host='0.0.0.0' makes it accessible from any IP address on the network
     # debug=True enables debugger and auto-reloader (DO NOT use in production)
