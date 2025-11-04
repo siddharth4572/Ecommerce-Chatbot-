@@ -75,7 +75,7 @@ export default function LoginPage() {
       }
     } catch (err) {
       // Handle network errors or if the backend server is unreachable
-      setError("Network error. Please ensure the backend server is running and accessible.");
+      setError((err as Error).message || "Network error. Please ensure the backend server is running and accessible.");
     } finally {
       setIsLoading(false); // Reset loading state regardless of outcome
     }
