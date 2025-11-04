@@ -22,8 +22,9 @@ export default function ProductCard({ product }: ProductCardProps) {
         <Image
           src={product.image_url || "/placeholder.png"}
           alt={product.name}
-          layout="fill"
-          objectFit="cover"
+          fill
+          sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+          style={{ objectFit: "cover" }}
           className="transition-transform duration-300 group-hover:scale-105"
         />
       </div>

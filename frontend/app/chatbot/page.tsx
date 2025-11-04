@@ -1,6 +1,6 @@
 "use client"
 
-import type React from "react"
+import React, { useCallback } from "react"
 
 import { useState, useEffect, useRef } from "react"
 import { useRouter } from "next/navigation"
@@ -16,6 +16,18 @@ interface Message {
   products?: Product[]
 }
 
+interface ChatHistoryMessage {
+  message: string
+  is_user_message: boolean
+  timestamp: string
+}
+
+interface ChatHistoryResponse {
+  status: string
+  message: string
+  data?: { history: ChatHistoryMessage[] }
+}
+
 interface Product {
   id: string
   name: string
@@ -23,6 +35,12 @@ interface Product {
   category: string
   description: string
   image_url?: string // Optional URL for the product image
+}
+
+interface ChatResponse {
+  status: string
+  message: string
+  data?: { products: Product[] }
 }
 
 // Use an environment variable for the API URL
@@ -39,6 +57,50 @@ export default function ChatbotPage() {
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const router = useRouter()
 
+  // Fetches the user's chat history from the backend
+  const loadChatHistory = useCallback(async () => {
+    try {
+      const userId = localStorage.getItem("userId");
+      if (!userId) return; // Should not happen if auth check passed, but good for safety
+
+      const response = await fetch(`${API_URL}/chat/history?user_id=${userId}`);
+
+      if (response.ok) {
+        const responseData: ChatHistoryResponse = await response.json();
+        if (responseData.status === "success" && responseData.data?.history) {
+          // Map backend history format to frontend Message interface
+          const formattedMessages = responseData.data.history.map((msg) => ({
+            id: msg.timestamp + Math.random().toString(36).substring(7), // Create a somewhat unique ID
+            text: msg.message,
+            sender: msg.is_user_message ? "user" : "bot",
+            timestamp: new Date(msg.timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+            // Note: products are not typically stored with individual history messages from backend
+          }));
+          if (formattedMessages.length > 0) {
+            setMessages(formattedMessages);
+          } else {
+            // If history is empty, show a default welcome.
+            setMessages([{
+                id: Date.now().toString(),
+                text: "Welcome! How can I assist you with our products today?",
+                sender: "bot",
+                timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+            }]);
+          }
+        } else {
+          console.warn("Chat history response not as expected or history is empty:", responseData.message);
+        }
+      } else {
+        // Handle HTTP errors (e.g., 404, 500) when fetching history
+        console.error("Failed to fetch chat history, status:", response.status);
+         setError("Could not load your chat history. Please try again later.");
+      }
+    } catch (err) {
+      // Handle network errors or other issues during fetch
+      console.error("Error loading chat history:", err);
+      setError("An error occurred while loading chat history.");
+    }
+  }, []);
   // Effect hook to run on component mount
   useEffect(() => {
     // Retrieve user authentication details from local storage
@@ -55,62 +117,7 @@ export default function ChatbotPage() {
     // Set the username for display and load chat history
     setUsername(storedUsername || userId); // Fallback to userId if username somehow isn't stored
     loadChatHistory();
-    // Dependency array: this effect runs when the router object changes (typically only on mount)
-  }, [router]);
-
-  // Effect hook to scroll to the bottom of the chat window whenever messages or typing status change
-  useEffect(() => {
-    scrollToBottom();
-  }, [messages, isTyping]);
-
-  // Scrolls the chat window to the latest message
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  };
-
-  // Fetches the user's chat history from the backend
-  const loadChatHistory = async () => {
-    try {
-      const userId = localStorage.getItem("userId");
-      if (!userId) return; // Should not happen if auth check passed, but good for safety
-
-      const response = await fetch(`${API_URL}/chat/history?user_id=${userId}`);
-
-      if (response.ok) {
-        const responseData = await response.json();
-        if (responseData.status === "success" && responseData.data && responseData.data.history) {
-          // Map backend history format to frontend Message interface
-          const formattedMessages = responseData.data.history.map((msg: any) => ({
-            id: msg.timestamp + Math.random().toString(36).substring(7), // Create a somewhat unique ID
-            text: msg.message,
-            sender: msg.is_user_message ? "user" : "bot",
-            timestamp: new Date(msg.timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-            // Note: products are not typically stored with individual history messages from backend
-          }));
-          setMessages(formattedMessages);
-        } else {
-          console.warn("Chat history response not as expected or history is empty:", responseData.message);
-          // If no messages and history is empty, show a default welcome.
-          if (messages.length === 0) { // Check current messages state before setting
-            setMessages([{
-                id: Date.now().toString(),
-                text: "Welcome! How can I assist you with our products today?",
-                sender: "bot",
-                timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
-            }]);
-          }
-        }
-      } else {
-        // Handle HTTP errors (e.g., 404, 500) when fetching history
-        console.error("Failed to fetch chat history, status:", response.status);
-         setError("Could not load your chat history. Please try again later.");
-      }
-    } catch (err) {
-      // Handle network errors or other issues during fetch
-      console.error("Error loading chat history:", err);
-      setError("An error occurred while loading chat history.");
-    }
-  };
+  }, [router, loadChatHistory]);
 
   // Sends a chat message (user or bot) to the backend to be saved in history
   const saveChatHistory = async (messageText: string, senderType: "user" | "bot") => {
@@ -136,6 +143,16 @@ export default function ChatbotPage() {
       console.error("Error saving chat message to history:", err);
       // Optionally, notify the user or implement a retry mechanism
     }
+  };
+
+  // Effect hook to scroll to the bottom of the chat window whenever messages or typing status change
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages, isTyping]);
+
+  // Scrolls the chat window to the latest message
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
   // Handles the process of sending a user's message to the chatbot backend
@@ -174,7 +191,7 @@ export default function ChatbotPage() {
         }),
       });
 
-      const responseData = await response.json();
+      const responseData: ChatResponse = await response.json();
 
       if (!response.ok || responseData.status !== "success") {
         const errorDetail = responseData.message || "Chatbot API request failed";
@@ -199,7 +216,7 @@ export default function ChatbotPage() {
         }
       }, 800); // Adjust delay as needed
 
-    } catch (err: any) {
+    } catch (err) {
       // Handle errors from the /chat API call or other issues
       setIsTyping(false);
       const errorMessageText = err.message || "Sorry, something went wrong. Please try again.";
@@ -249,7 +266,7 @@ export default function ChatbotPage() {
     // Send message if Enter is pressed and Shift is not (to allow multi-line input if textarea was used)
     if (event.key === "Enter" && !event.shiftKey) {
       event.preventDefault(); // Prevent default newline behavior
-      handleSendMessage(event as any); // Type assertion for event, or adjust handleSendMessage signature
+      handleSendMessage(event);
     }
   }
 
@@ -302,8 +319,8 @@ export default function ChatbotPage() {
             <Bot className="h-20 w-20 text-gray-300 mb-6" />
             <h3 className="text-xl font-semibold text-gray-700 mb-2">Welcome to your E-Commerce Assistant!</h3>
             <p className="text-gray-500 max-w-lg text-center">
-              I can help you find products, compare items, and much more.
-              Try asking: <em className="text-indigo-500">'Show me laptops under ₹50000'</em> or <em className="text-indigo-500">'Are there any headphones?'</em>
+              I can help you find products, compare items, and much more. Try
+              asking: <em className="text-indigo-500">&apos;Show me laptops under ₹50000&apos;</em> or <em className="text-indigo-500">&apos;Are there any headphones?&apos;</em>
             </p>
           </div>
         )}
