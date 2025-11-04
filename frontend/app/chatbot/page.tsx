@@ -25,6 +25,9 @@ interface Product {
   image_url?: string // Optional URL for the product image
 }
 
+// Use an environment variable for the API URL
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+
 // Main component for the chatbot page
 export default function ChatbotPage() {
   const [messages, setMessages] = useState<Message[]>([])
@@ -71,7 +74,7 @@ export default function ChatbotPage() {
       const userId = localStorage.getItem("userId");
       if (!userId) return; // Should not happen if auth check passed, but good for safety
 
-      const response = await fetch(`http://localhost:5000/chat/history?user_id=${userId}`);
+      const response = await fetch(`${API_URL}/chat/history?user_id=${userId}`);
 
       if (response.ok) {
         const responseData = await response.json();
@@ -118,7 +121,7 @@ export default function ChatbotPage() {
         return;
       }
 
-      await fetch("http://localhost:5000/chat/history", {
+      await fetch(`${API_URL}/chat/history`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -162,7 +165,7 @@ export default function ChatbotPage() {
 
     try {
       // Send message to the main /chat endpoint
-      const response = await fetch("http://localhost:5000/chat", {
+      const response = await fetch(`${API_URL}/chat`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -300,7 +303,7 @@ export default function ChatbotPage() {
             <h3 className="text-xl font-semibold text-gray-700 mb-2">Welcome to your E-Commerce Assistant!</h3>
             <p className="text-gray-500 max-w-lg text-center">
               I can help you find products, compare items, and much more.
-              Try asking: <em className="text-indigo-500">"Show me laptops under ₹50000"</em> or <em className="text-indigo-500">"Are there any headphones?"</em>
+              Try asking: <em className="text-indigo-500">'Show me laptops under ₹50000'</em> or <em className="text-indigo-500">'Are there any headphones?'</em>
             </p>
           </div>
         )}
