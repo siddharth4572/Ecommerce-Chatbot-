@@ -72,7 +72,7 @@ export default function ChatbotPage() {
           const formattedMessages = responseData.data.history.map((msg) => ({
             id: msg.timestamp + Math.random().toString(36).substring(7), // Create a somewhat unique ID
             text: msg.message,
-            sender: msg.is_user_message ? "user" : "bot",
+            sender: (msg.is_user_message ? "user" : "bot") as "user" | "bot",
             timestamp: new Date(msg.timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
             // Note: products are not typically stored with individual history messages from backend
           }));
