@@ -449,20 +449,13 @@ def get_chat_history():
     return jsonify({"status": "success", "message": "Chat history retrieved.", "data": {"history": history}}), 200
 
 
-# --- Application Entry Point ---
-if __name__ == '__main__':
-    # Ensure the directory for the database exists, especially if running from a different context
-    db_dir = os.path.dirname(os.path.abspath(__file__)) # Get directory of current script
-    if not os.path.exists(db_dir) and db_dir: # Check if db_dir is not empty
-        os.makedirs(db_dir)
-    db_path = os.path.join(db_dir, DATABASE_NAME) # Construct full path to DB
+# --- Application Initialization ---
+# This code will run once when the application starts, even when using Gunicorn.
+with app.app_context():
+    app.logger.info(f"Database will be created/connected at: {DATABASE_NAME}")
+    create_tables()      # Create tables if they don't exist
+    populate_products()  # Add mock products if the table is empty
 
-    app.logger.info(f"Database will be created/connected at: {db_path}")
-    
-    # Initialize database schema and populate with initial data
-    create_tables()
-    populate_products()
-    
     # Run the Flask development server
     # host='0.0.0.0' makes it accessible from any IP address on the network
     # debug=True enables debugger and auto-reloader (DO NOT use in production)
