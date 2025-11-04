@@ -1,5 +1,6 @@
 "use client"
 
+import Image from "next/image"
 import { ShoppingCart, Star } from "lucide-react"
 
 // Defines the structure of a product object, matching the backend's data model
@@ -37,10 +38,12 @@ export default function ProductCard({ product }: ProductCardProps) {
   return (
     <div className="bg-white rounded-xl shadow-lg border border-gray-200 hover:shadow-xl transition-all duration-300 ease-in-out flex flex-col overflow-hidden group">
       <div className="relative aspect-w-4 aspect-h-3 sm:aspect-h-3 bg-gray-100 overflow-hidden">
-        <img
+        <Image
           src={product.image_url || `https://placehold.co/600x400/e2e8f0/94a3b8?text=${encodeURIComponent(product.name)}`}
           alt={product.name}
-          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300 ease-in-out"
+          fill
+          sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+          className="object-cover group-hover:scale-105 transition-transform duration-300 ease-in-out"
         />
       </div>
 
